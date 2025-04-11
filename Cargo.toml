@@ -1,0 +1,7 @@
+[package]
+name = "mccm-emulator"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+motherboard = { path = "/home/cedar/Code/rust/motherboard" }
