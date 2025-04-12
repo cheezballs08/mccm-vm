@@ -14,7 +14,11 @@ pub fn run(registers: &mut [Register], rom: &mut Memory) -> Option<ExitCode> {
     },
   };
 
-  let directive = decode_args(opcode);
+  rom.move_back_by_n(2);
+
+  let args = rom.get_bytes(opcode.required_args() as usize).unwrap().to_vec();
+
+  let directive = decode_args(opcode, args);
 
   alu::apply_operation(directive, registers, rom);
   
