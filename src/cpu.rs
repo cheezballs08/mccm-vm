@@ -14,9 +14,11 @@ pub fn run(registers: &mut [Register], rom: &mut Memory) -> Option<ExitCode> {
     },
   };
 
-  rom.move_back_by_n(2);
+  rom.move_front_by_n(2);
 
   let args = rom.get_bytes(opcode.required_args() as usize).unwrap().to_vec();
+
+  rom.move_back_by_n(2);
 
   let directive = decode_args(opcode, args);
 
