@@ -1,11 +1,11 @@
 #[derive(Debug)]
 pub struct Register {
   byte_repr: u8,
-  val: u8
+  val: usize
 }
 
 impl Register {
-  pub const fn new(repr: u8, init_val: u8) -> Self {
+  pub const fn new(repr: u8, init_val: usize) -> Self {
     return Register {
       byte_repr: repr,
       val: init_val,
@@ -16,11 +16,11 @@ impl Register {
     return self.byte_repr
   }
 
-  pub fn set(&mut self, val: u8) {
+  pub fn set(&mut self, val: usize) {
     self.val = val
   }
 
-  pub fn get(&self) -> u8 {
+  pub fn get(&self) -> usize {
     self.val
   }
 }

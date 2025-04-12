@@ -36,10 +36,20 @@ fn main() -> ExitCode {
   ];
 
   let mut rom = Memory::new(vec![
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0b00000010,
+    0b1,
+    0x5,
+    0x7,
+    0b00000010,
+    0b1,
+    0x10,
+    0x3,
   ]);
 
   loop {
+    println!("{:#?}", rom);
+    println!("{:#?}", regsiters);
+    
     match cpu::run(&mut regsiters, &mut rom) {
       Some(code) => return code,
       None => continue,

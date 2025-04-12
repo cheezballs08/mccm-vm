@@ -1,16 +1,17 @@
 use crate::{register::Register, Byte};
 
+#[derive(Debug)]
 pub enum ImmediateFlag {
   No,
   Yes
 }
 
 fn no_immediate(in_val: usize, out_reg: usize, registers: &mut [Register]) {
-  todo!("mov::no_immediate()")
+  registers[out_reg].set(in_val);
 }
 
 fn yes_immediate(in_val: usize, out_reg: usize, registers: &mut [Register]) {
-  todo!("mov::yes_immediate()")
+
 }
 
 pub fn apply(in_val: usize, out_reg:usize, flag: ImmediateFlag,  registers: &mut [Register]) {

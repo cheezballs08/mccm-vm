@@ -3,13 +3,14 @@ use std::{ops::Range, result, u8, vec};
 
 use crate::opcodes::mov::{self, ImmediateFlag};
 
+#[derive(Debug)]
 pub enum ALUDirective {
   Mov(usize, usize, mov::ImmediateFlag, usize)  
 }
 
 #[repr(u16)]
 enum Opcode {
-  Mov(mov::ImmediateFlag) = 0b0000000100000001,
+  Mov(mov::ImmediateFlag) = 0b1,
 }
 
 pub struct DecodedOpcode {
@@ -80,16 +81,22 @@ fn get_bit(num: usize, bit_index: u8) -> u8 {
 }
 
 fn get_bits(num: usize, range: Range<u8>) -> u8 {
-  todo!()
+  let mut result = 0;
+
+  for i in range {
+    result |= get_bit(num, i) << i;
+  }
+
+  result
 }
 
 pub fn decode_opcode(bytes: [u8; 2]) -> DecodedOpcode {
-  let opcode_byte = bytes[0];
+  let opcode_byte = bytes[1];
 
-  let decorator_byte = bytes[1];
+  let decorator_byte = bytes[0];
 
   match opcode_byte {
-    val if val == Opcode::Mov as u8 => {
+    0b1 => {
       let immediate_bit: u8 = get_bit(decorator_byte as usize, 7);
       let immediate_flag = match immediate_bit {
         0 => mov::ImmediateFlag::No,
@@ -97,7 +104,8 @@ pub fn decode_opcode(bytes: [u8; 2]) -> DecodedOpcode {
         _ => unreachable!()
       };
 
-      let required_args: u8 = get_bits(decorator_byte as usize, 6..4);
+      let required_args: u8 = get_bits(decorator_byte as usize, 0..5);
+      println!("Required args: {}", required_args);
 
       DecodedOpcode {
         opcode: Opcode::Mov(immediate_flag),
@@ -105,7 +113,7 @@ pub fn decode_opcode(bytes: [u8; 2]) -> DecodedOpcode {
       }
     }
     _ => {
-      todo!()
+      panic!("Opcode {:#010b} is not a vaild opcode.", opcode_byte)
     }
   }
 }
@@ -138,5 +146,19 @@ pub fn decode_args(opcode: DecodedOpcode, requested_args: Vec<u8>) -> ALUDirecti
     _ => {
       todo!()
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+
+  #[test]
+  fn test_get_bit() {
+    assert_eq!(super::get_bit(0b1010, 1), 1);
+  }
+
+  #[test]
+  fn test_get_bits() {
+    assert_eq!(super::get_bits(0b1010, 0..2), 0b10);
   }
 }
