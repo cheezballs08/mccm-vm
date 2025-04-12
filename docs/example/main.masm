@@ -1,3 +1,3 @@
 main:
-  movi 3 -> r1
+  movi8 3 -> r1
   mov r1 -> r2

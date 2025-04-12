@@ -5,10 +5,3 @@ version = 4
 [[package]]
 name = "mccm-emulator"
 version = "0.1.0"
-dependencies = [
- "motherboard",
-]
-
-[[package]]
-name = "motherboard"
-version = "0.1.0"

@@ -1,81 +1,64 @@
+use core::num;
+use std::result;
+
 use crate::opcodes::mov;
 
 pub enum ALUDirective {
   Mov(usize, usize, mov::ImmediateFlag, usize)  
 }
 
-pub enum MCCMOperation {
-  Mov = 0x0, 
+enum Opcode {
+  Mov = 0b0000000100000001,
 }
 
+#[repr()]
+pub struct DecodedOpcode {
+  opcode: Opcode,
+  args: Vec<u8>
+}
 
-fn four_bytes_to_u64(bytes: [u8; 4]) -> usize {
-  let mut result: usize = 0;
+fn eight_bytes_to_u64(bytes: [u8; 8]) -> u64 {
+  let mut result: u64 = 0;
 
-  for i in 0..4 {
-    result |= (bytes[i] as usize) << (i * 8);
+  for i in 0..8 {
+    result |= (bytes[i] as u64) << (i * 8);
   }
 
   result
 }
 
-fn get_bit(bit: u8) {
-  todo!("decoder::get_bit()")
-}
+fn four_bytes_to_u32(bytes: [u8; 4]) -> u32 {
+  let mut result: u32 = 0;
 
-fn decode_opcode(opcode: usize) -> MCCMOperation {
-  todo!("decoder::decode_opcode()")
-}
-
-fn decode_args(operation: MCCMOperation, bytes: [u8; 12]) -> ALUDirective {
-  todo!("decoder::decode_args()")
-}
-
-pub fn decode_instruction(bytes: [u8; 16]) -> ALUDirective {
-  let opcode: [u8; 4] = [
-    bytes[0], 
-    bytes[1], 
-    bytes[2], 
-    bytes[3]
-  ];
-
-  let potential_args = [
-    bytes[4], 
-    bytes[5], 
-    bytes[6], 
-    bytes[7], 
-    bytes[8], 
-    bytes[9], 
-    bytes[10], 
-    bytes[11], 
-    bytes[12], 
-    bytes[13], 
-    bytes[14], 
-    bytes[15]
-  ];
-
-  let opcode_u64 = four_bytes_to_u64(opcode);
-
-  let opcode_type = decode_opcode(opcode_u64);
-
-  match opcode_type {
-    MCCMOperation::Mov => {
-      decode_args(opcode_type, potential_args)
-    }
+  for i in 0..4 {
+    result |= (bytes[i] as u32) << (i * 8);
   }
+
+  result  
 }
 
-#[cfg(test)]
-mod tests {
-  
-  use super::*;
-  
-  #[test]
-  fn test_four_bytes_to_u64() {
-    let bytes = [0b00000001, 0b00000001, 0b00000001, 0b00000001];
-  
-    let result = four_bytes_to_u64(bytes);
+fn two_bytes_to_u16(bytes: [u8; 2]) -> u16 {
+  let mut result: u16 = 0;
 
-    assert_eq!(result, 0b00000001000000010000000100000001);
+  for i in 0..2 {
+    result |= (bytes[i] as u16) << (i * 8);
+  }
+
+  result  
+}
+
+fn get_bit(num: u64, bit_index: u8) -> u8 {
+  ((num >> bit_index) & 1) as u8 
+}
+
+pub fn decode_opcode(bytes: [u8; 2]) -> DecodedOpcode {
+  todo!()
+}
+
+pub fn decode_args(opcode: DecodedOpcode) -> ALUDirective {
+  match opcode.opcode {
+    Opcode::Mov => {
+      todo!()
+    } 
   }
 }
