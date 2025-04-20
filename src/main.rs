@@ -6,9 +6,9 @@ pub mod memory;
 pub mod cpu;
 pub mod opcodes;
 pub mod register;
+pub mod bitops;
 
-use std::process::ExitCode;
-
+use std::{env, process::ExitCode};
 use memory::Memory;
 use register::Register;
 
@@ -35,20 +35,15 @@ fn main() -> ExitCode {
     Register::new(15, 0),
   ];
 
-  let mut rom = Memory::new(vec![
-    0b00000010,
-    0b1,
-    0x5,
-    0x7,
-    0b00000010,
-    0b1,
-    0x10,
-    0x3,
-  ]);
+  let rom_file = "/home/cedar/Code/rust/mccm-emulator/roms/test_rom"; //env::args().nth(1).expect("Expected the rom filepath.");
+
+  let mut rom = Memory::new(std::fs::read(&rom_file).expect("Failed to read rom file"));
+
+  println!("{:#x?}", rom);
 
   loop {
-    println!("{:#?}", rom);
-    println!("{:#?}", regsiters);
+    // println!("{:#?}", rom);
+    // println!("{:#?}", regsiters);
     
     match cpu::run(&mut regsiters, &mut rom) {
       Some(code) => return code,

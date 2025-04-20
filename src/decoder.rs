@@ -1,16 +1,39 @@
-use core::num;
-use std::{ops::Range, result, u8, vec};
+use core::{num, panic};
+use std::{fmt::format, ops::Range, result, u8, usize, vec};
 
-use crate::opcodes::mov::{self, ImmediateFlag};
+use crate::opcodes::{add, mov::{self, ImmediateFlag}};
+use crate::bitops;
 
 #[derive(Debug)]
 pub enum ALUDirective {
-  Mov(usize, usize, mov::ImmediateFlag, usize)  
+  Mov(usize, usize, mov::ImmediateFlag, usize),
+  Add(usize, usize, usize, add::ImmediateFlag, usize),
+}
+
+impl ToString for ALUDirective {
+  fn to_string(&self) -> String {
+    match self {
+      ALUDirective::Mov(in_val, out_reg, immediate_flag, offset) => {
+        match immediate_flag {
+          mov::ImmediateFlag::No => {
+            format!("mov r{} -> r{}", in_val, out_reg)
+          }
+          mov::ImmediateFlag::Yes => {
+            format!("mov::i{} #{} -> r{}", (offset - 3) * 8, in_val, out_reg)
+          }
+        }
+      }
+      ALUDirective::Add(in_val, out_reg, out_val, immediate_flag, offset) => {
+        todo!("Decoding for add opcode not implemented yet.")
+      }
+    }
+  }
 }
 
 #[repr(u16)]
 enum Opcode {
   Mov(mov::ImmediateFlag) = 0b1,
+  Add(add::ImmediateFlag) = 0b10,
 }
 
 pub struct DecodedOpcode {
@@ -24,94 +47,45 @@ impl DecodedOpcode {
   }
 }
 
-fn eight_bytes_to_u64(bytes: [u8; 8]) -> u64 {
-  let mut result: u64 = 0;
-
-  for i in 0..8 {
-    result |= (bytes[i] as u64) << (i * 8);
-  }
-
-  result
-}
-
-fn four_bytes_to_u32(bytes: [u8; 4]) -> u32 {
-  let mut result: u32 = 0;
-
-  for i in 0..4 {
-    result |= (bytes[i] as u32) << (i * 8);
-  }
-
-  result  
-}
-
-fn two_bytes_to_u16(bytes: [u8; 2]) -> u16 {
-  let mut result: u16 = 0;
-
-  for i in 0..2 {
-    result |= (bytes[i] as u16) << (i * 8);
-  }
-
-  result  
-}
-
-fn bytes_to_num(bytes: Vec<u8>) -> u64 {
-  let width = bytes.len();
-
-  match width {
-    1 => {
-      bytes.get(0).unwrap().clone() as u64
-    }
-    2 => {
-      two_bytes_to_u16(bytes.try_into().unwrap()) as u64
-    }
-    4 => {
-      four_bytes_to_u32(bytes.try_into().unwrap()) as u64
-    }
-    8 => {
-      eight_bytes_to_u64(bytes.try_into().unwrap())
-    }
-    _ => {
-      unreachable!("Invalid number of bytes")
-    }
-  }
-}
-
-fn get_bit(num: usize, bit_index: u8) -> u8 {
-  ((num >> bit_index) & 1) as u8 
-}
-
-fn get_bits(num: usize, range: Range<u8>) -> u8 {
-  let mut result = 0;
-
-  for i in range {
-    result |= get_bit(num, i) << i;
-  }
-
-  result
-}
-
 pub fn decode_opcode(bytes: [u8; 2]) -> DecodedOpcode {
   let opcode_byte = bytes[1];
 
   let decorator_byte = bytes[0];
 
   match opcode_byte {
-    0b1 => {
-      let immediate_bit: u8 = get_bit(decorator_byte as usize, 7);
+    1 => {
+      let immediate_bit: u8 = bitops::get_bit(decorator_byte as usize, 7);
       let immediate_flag = match immediate_bit {
-        0 => mov::ImmediateFlag::No,
-        1 => mov::ImmediateFlag::Yes,
+        0b0 => mov::ImmediateFlag::No,
+        0b1 => mov::ImmediateFlag::Yes,
         _ => unreachable!()
       };
 
-      let required_args: u8 = get_bits(decorator_byte as usize, 0..5);
-      println!("Required args: {}", required_args);
+      let required_args: u8 = bitops::get_bits(decorator_byte as usize, 0..5);
 
       DecodedOpcode {
         opcode: Opcode::Mov(immediate_flag),
         required_args
       }
     }
+    
+    2 => {
+      let immediate_bits = bitops::get_bits(decorator_byte as usize, 5..7);
+      let immediate_flag = match immediate_bits {
+        0b00 => add::ImmediateFlag::No,
+        0b10 => add::ImmediateFlag::One,
+        0b11 => add::ImmediateFlag::Two,
+        _ => panic!("Invalid immediate flag state for add opcode. State: {:#04b}", immediate_bits) 
+      };
+
+      let required_args: u8 = bitops::get_bits(decorator_byte as usize, 0..5);
+
+      DecodedOpcode {
+        opcode: Opcode::Add(immediate_flag),
+        required_args
+      }
+    }
+
     _ => {
       panic!("Opcode {:#010b} is not a vaild opcode.", opcode_byte)
     }
@@ -121,44 +95,11 @@ pub fn decode_opcode(bytes: [u8; 2]) -> DecodedOpcode {
 pub fn decode_args(opcode: DecodedOpcode, requested_args: Vec<u8>) -> ALUDirective {
   match opcode.opcode {
     Opcode::Mov(immediate_flag) => {
-      match immediate_flag {
-        mov::ImmediateFlag::No => {
-          let in_reg = requested_args[0];
-
-          let out_reg = requested_args[1];
-
-          return ALUDirective::Mov(in_reg as usize, out_reg as usize, immediate_flag, 4);
-
-        }
-        mov::ImmediateFlag::Yes => {
-          let in_reg = requested_args[0];
-
-          let arg_amount = requested_args.len();
-
-          let out_reg = requested_args.get(arg_amount-1..1).unwrap();
-
-          let immediate_value = bytes_to_num(requested_args.get(1..arg_amount-1).unwrap().to_vec());
-
-          return ALUDirective::Mov(in_reg as usize, out_reg[0] as usize, immediate_flag, immediate_value as usize);
-        }
-      }
-    } 
-    _ => {
-      todo!()
+      mov::decode_args(immediate_flag, requested_args)
     }
-  }
-}
 
-#[cfg(test)]
-mod tests {
-
-  #[test]
-  fn test_get_bit() {
-    assert_eq!(super::get_bit(0b1010, 1), 1);
-  }
-
-  #[test]
-  fn test_get_bits() {
-    assert_eq!(super::get_bits(0b1010, 0..2), 0b10);
+    Opcode::Add(immediate_flag) => {
+      add::decode_args(immediate_flag, requested_args)
+    }
   }
 }
