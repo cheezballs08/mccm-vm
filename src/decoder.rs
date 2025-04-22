@@ -1,13 +1,12 @@
 use core::{num, panic};
 use std::{fmt::format, ops::Range, result, u8, usize, vec};
 
-use crate::opcodes::{add, mov::{self, ImmediateFlag}};
+use crate::opcodes::mov::{self, ImmediateFlag};
 use crate::bitops;
 
 #[derive(Debug)]
 pub enum ALUDirective {
   Mov(usize, usize, mov::ImmediateFlag, usize),
-  Add(usize, usize, usize, add::ImmediateFlag, usize),
 }
 
 impl ToString for ALUDirective {
@@ -23,9 +22,6 @@ impl ToString for ALUDirective {
           }
         }
       }
-      ALUDirective::Add(in_val, out_reg, out_val, immediate_flag, offset) => {
-        todo!("Decoding for add opcode not implemented yet.")
-      }
     }
   }
 }
@@ -33,7 +29,6 @@ impl ToString for ALUDirective {
 #[repr(u16)]
 enum Opcode {
   Mov(mov::ImmediateFlag) = 0b1,
-  Add(add::ImmediateFlag) = 0b10,
 }
 
 pub struct DecodedOpcode {
@@ -68,24 +63,6 @@ pub fn decode_opcode(bytes: [u8; 2]) -> DecodedOpcode {
         required_args
       }
     }
-    
-    2 => {
-      let immediate_bits = bitops::get_bits(decorator_byte as usize, 5..7);
-      let immediate_flag = match immediate_bits {
-        0b00 => add::ImmediateFlag::No,
-        0b10 => add::ImmediateFlag::One,
-        0b11 => add::ImmediateFlag::Two,
-        _ => panic!("Invalid immediate flag state for add opcode. State: {:#04b}", immediate_bits) 
-      };
-
-      let required_args: u8 = bitops::get_bits(decorator_byte as usize, 0..5);
-
-      DecodedOpcode {
-        opcode: Opcode::Add(immediate_flag),
-        required_args
-      }
-    }
-
     _ => {
       panic!("Opcode {:#010b} is not a vaild opcode.", opcode_byte)
     }
@@ -96,10 +73,6 @@ pub fn decode_args(opcode: DecodedOpcode, requested_args: Vec<u8>) -> ALUDirecti
   match opcode.opcode {
     Opcode::Mov(immediate_flag) => {
       mov::decode_args(immediate_flag, requested_args)
-    }
-
-    Opcode::Add(immediate_flag) => {
-      add::decode_args(immediate_flag, requested_args)
     }
   }
 }

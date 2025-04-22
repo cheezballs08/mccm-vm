@@ -8,10 +8,5 @@ pub fn apply_operation(directive: ALUDirective, registers: &mut [Register], rom:
       mov::apply(in_val, out_reg, immediate_flag, registers);
       rom.move_front_by_n(offset);
     },
-
-    ALUDirective::Add(in_val, in_val2, out_reg, immediate_flag, offset) => {
-      add::apply(in_val, in_val2, out_reg, immediate_flag, registers);
-      rom.move_front_by_n(offset);
-    }
   }
 }
