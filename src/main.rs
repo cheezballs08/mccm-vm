@@ -1,9 +1,6 @@
 #![allow(unused)]
 
-pub mod alu;
-pub mod decoder;
 pub mod memory;
-pub mod cpu;
 pub mod opcodes;
 pub mod register;
 pub mod bitops;
@@ -44,10 +41,5 @@ fn main() -> ExitCode {
   loop {
     // println!("{:#?}", rom);
     // println!("{:#?}", regsiters);
-    
-    match cpu::run(&mut regsiters, &mut rom) {
-      Some(code) => return code,
-      None => continue,
-    }
   }
 }
